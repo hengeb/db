@@ -7,13 +7,18 @@ use Hengeb\Db\Db;
 
 class DbStatement
 {
-    private $insertId = null;
+    private ?string $insertId = null;
+    private ?array $allRows = null;
 
-    public function __construct(
-        private Db $db,
-        private \PDOStatement $statement,
-        private string $queryString)
+    private Db $db;
+    private \PDOStatement $statement;
+    private string $queryString;
+
+    public function __construct(Db $db, \PDOStatement $statement, string $queryString)
     {
+        $this->db = $db;
+        $this->statement = $statement;
+        $this->queryString = $queryString;
     }
 
     /**
@@ -22,7 +27,7 @@ class DbStatement
      * @throws \InvalidArgumentException if a value has a different type
      * @return $this (for chaining)
      */
-    public function bind(array $values): DbStatement
+    public function bind(array $values): self
     {
         foreach ($values as $name => $value) {
             $type = null;
@@ -41,7 +46,7 @@ class DbStatement
                 $value = $value->format('Y-m-d H:i:s');
                 $type = \PDO::PARAM_STR;
             } else {
-                throw new \InvalidArgumentException("`$name` has unsupported data type " . gettype($value));
+                throw new \InvalidArgumentException("`$name` has unsupported type " . gettype($value));
             }
             $this->statement->bindValue($name, $value, $type);
         }
@@ -52,9 +57,9 @@ class DbStatement
      * @throws \Exception if something goes wrong (error message includes the original error message and the query string)
      * @return last insert id or $this if nothing was inserted
      */
-    public function execute(): DbStatement|int
+    public function execute(): self
     {
-        $oldId = $this->db->getLastInsertId();
+        $this->allRows = null;
 
         try {
             $this->statement->execute();
@@ -62,15 +67,17 @@ class DbStatement
             throw new \Exception(get_class($e) . ': ' . $e->getMessage() . '; Query String was: ' . $this->queryString);
         }
 
-        $newId = $this->db->getLastInsertId();
-        $this->insertId = ($oldId === $newId || $newId === false) ? null : $newId;
+        $this->insertId = $this->db->getLastInsertId();
 
-        return $this->insertId ?? $this;
+        return $this;
     }
 
     public function getAll(): array
     {
-        return $this->statement->fetchAll(\PDO::FETCH_ASSOC);
+        if ($this->allRows === null) {
+            $this->allRows = $this->statement->fetchAll(\PDO::FETCH_ASSOC);
+        }
+        return $this->allRows;
     }
 
     public function getRow(): array
@@ -80,32 +87,38 @@ class DbStatement
 
     public function getColumn(string $key = ''): array
     {
-        $all = $this->getAll();
-        if (!count($all)) {
+        if ($this->getRowCount() === 0) {
             return [];
         }
-        if ($key) {
-            if (!isset($all[0][$key]) {
-                throw new \UnexpectedValueException('key not found: ' . $key);
-            }
-            return array_column($all, $key);
+        if (!$key) {
+            return $this->statement->fetchAll(\PDO::FETCH_COLUMN, 0);
         }
-        return array_column($all, 0);
+        $all = $this->getAll();
+        if (!isset($all[0][$key])) {
+            throw new \UnexpectedValueException('key not found: ' . $key);
+        }
+        return array_column($all, $key);
     }
 
-    public function get(string $key = '')
+    public function get(string $key = ''): mixed
     {
         $column = $this->getColumn($key);
         return count($column) ? $column[0] : null;
     }
 
-    public function getRowCount()
+    public function getRowCount(): int
     {
         return $this->statement->rowCount();
     }
 
-    public function getId(): ?int
+    /**
+     * @throws \LogicException when no row was inserted by this statement
+     */
+    public function getInsertId(): string
     {
+        if ($this->insertId === null) {
+            throw new \LogicException('getInsertId was called but nothing was inserted.');
+        }
         return $this->insertId;
     }
 }

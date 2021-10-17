@@ -1,6 +1,6 @@
 # db
 
-A simple MySQL library for PHP
+A simple MySQL library for PHP (PDO wrapper)
 
 ## Installation
 
@@ -29,7 +29,7 @@ $db = new Db([
 $id = $db->query("INSERT INTO contacts SET name=:name, phone=:phone", [
     "name" => "Jane",
     "phone" => "555-123",
-]);
+])->getInsertId();
 // e.g. $id === 4
 
 // get single value

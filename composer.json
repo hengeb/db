@@ -1,6 +1,6 @@
 {
     "name": "hengeb/db",
-    "description": "A simple mysql library",
+    "description": "A simple mysql library (PDO wrapper)",
     "license": "MIT",
     "authors": [
         {
@@ -11,7 +11,8 @@
         }
     ],
     "require": {
-        "php": ">=8.0"
+        "php": ">=7.4.0",
+        "ext-pdo_mysql": "*"
     },
     "autoload": {
         "psr-4": {"Hengeb\\Db\\": "src"}
