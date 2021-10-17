@@ -100,7 +100,10 @@ class DbStatement
         return array_column($all, $key);
     }
 
-    public function get(string $key = ''): mixed
+    /**
+     * @return mixed
+     */
+    public function get(string $key = '')
     {
         $column = $this->getColumn($key);
         return count($column) ? $column[0] : null;
