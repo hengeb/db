@@ -82,7 +82,8 @@ class DbStatement
 
     public function getRow(): array
     {
-        return $this->getAll()[0];
+        $rows = $this->getAll();
+        return $rows ? $rows[0] : [];
     }
 
     public function getColumn(string $key = ''): array
