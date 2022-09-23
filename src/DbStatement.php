@@ -95,7 +95,7 @@ class DbStatement
             return $this->statement->fetchAll(\PDO::FETCH_COLUMN, 0);
         }
         $all = $this->getAll();
-        if (!isset($all[0][$key]))  {
+        if (!isset($all[0][$key])) {
             throw new \UnexpectedValueException('key not found: ' . $key);
         }
         return array_column($all, $key);
