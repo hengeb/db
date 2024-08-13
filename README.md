@@ -25,6 +25,17 @@ $db = new Db([
     "password" => "secret"
 ]);
 
+// alternative:
+$db = Db::getInstance();
+/**
+ * in this case the configuration will be loaded from environment variables
+ * - MYSQL_HOST (default: localhost)
+ * - MYSQL_PORT (default: 3306)
+ * - MYSQL_DATABASE (default: database)
+ * - MYSQL_USER (no default, required)
+ * - MYSQL_PASSWORD (no default, required)
+ */
+
 // query() and execute() return insert id if a row was inserted
 $id = $db->query("INSERT INTO contacts SET name=:name, phone=:phone", [
     "name" => "Jane",
