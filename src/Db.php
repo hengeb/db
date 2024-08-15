@@ -83,4 +83,24 @@ class Db
     {
         $this->dbh->rollBack();
     }
+
+    public function quote(mixed $value): mixed {
+        $type = \PDO::PARAM_STR;
+        if (is_bool($value)) {
+            $type = \PDO::PARAM_BOOL;
+        } elseif (is_null($value)) {
+            $type = \PDO::PARAM_NULL;
+        } elseif (is_int($value)) {
+            $type = \PDO::PARAM_INT;
+        } elseif (is_string($value)) {
+            $type = \PDO::PARAM_STR;
+        } elseif (is_array($value)) {
+            $value = json_encode($value);
+            $type = \PDO::PARAM_STR;
+        } elseif (is_object($value) && get_class($value) === 'DateTime') {
+            $value = $value->format('Y-m-d H:i:s');
+            $type = \PDO::PARAM_STR;
+        }
+        return $this->dbh->quote("$value", $type);
+    }
 }
