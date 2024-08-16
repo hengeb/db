@@ -31,23 +31,7 @@ class DbStatement
     {
         foreach ($values as $name => $value) {
             $type = null;
-            if (is_bool($value)) {
-                $type = \PDO::PARAM_BOOL;
-            } elseif (is_null($value)) {
-                $type = \PDO::PARAM_NULL;
-            } elseif (is_int($value)) {
-                $type = \PDO::PARAM_INT;
-            } elseif (is_string($value)) {
-                $type = \PDO::PARAM_STR;
-            } elseif (is_array($value)) {
-                $value = json_encode($value);
-                $type = \PDO::PARAM_STR;
-            } elseif (is_object($value) && get_class($value) === 'DateTime') {
-                $value = $value->format('Y-m-d H:i:s');
-                $type = \PDO::PARAM_STR;
-            } else {
-                throw new \InvalidArgumentException("`$name` has unsupported type " . gettype($value));
-            }
+            [$value, $type] = $this->db->getInsertableValueAndType($value);
             $this->statement->bindValue($name, $value, $type);
         }
         return $this;

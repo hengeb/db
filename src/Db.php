@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Hengeb\Db;
 
+use DateTimeZone;
 use Hengeb\Db\DbStatement;
 
 /**
@@ -12,6 +13,8 @@ class Db
 {
     private $dbh = null;
     private static ?Db $instance = null;
+
+    public DateTimeZone $timezoneUtc;
 
     /**
      * @param array $configuration e.g. ["host" => "example.org", "port" => 3306, "database" => "my_database", "user" => "john.doe", "password" => "secret"]
@@ -23,6 +26,8 @@ class Db
         $this->dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->dbh->query('SET NAMES "utf8mb4" COLLATE "utf8mb4_unicode_ci"');
         $this->dbh->query('SET time_zone = "+00:00"');
+
+        $this->timezoneUtc = new DateTimeZone('UTC');
     }
 
     public static function getInstance(): self
@@ -84,10 +89,11 @@ class Db
         $this->dbh->rollBack();
     }
 
-    public function quote(mixed $value): mixed {
+    public function getInsertableValueAndType(mixed $value): array {
         $type = \PDO::PARAM_STR;
         if (is_bool($value)) {
             $type = \PDO::PARAM_BOOL;
+            $value = $value ? 1 : 0;
         } elseif (is_null($value)) {
             $type = \PDO::PARAM_NULL;
         } elseif (is_int($value)) {
@@ -97,10 +103,20 @@ class Db
         } elseif (is_array($value)) {
             $value = json_encode($value);
             $type = \PDO::PARAM_STR;
-        } elseif (is_object($value) && get_class($value) === 'DateTime') {
+        } elseif ($value instanceof DateTimeInterface) {
+            if ($value->getTimeZone()->getName() !== 'UTC') {
+                $value = $value->setTimeZone($this->timezoneUtc);
+            }
             $value = $value->format('Y-m-d H:i:s');
             $type = \PDO::PARAM_STR;
+        } else {
+            throw new \InvalidArgumentException('unsupported type: ' . gettype($value) . (gettype($value) === 'object' ? (' of type ' . $value::class) : ''));
         }
+        return [$value, $type];
+    }
+
+    public function quote(mixed $value): mixed {
+        [$value, $type] = $this->getInsertableValueAndType($value);
         return $this->dbh->quote("$value", $type);
     }
 }
