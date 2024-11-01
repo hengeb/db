@@ -39,7 +39,7 @@ class DbStatement
 
     /**
      * @throws \Exception if something goes wrong (error message includes the original error message and the query string)
-     * @return last insert id or $this if nothing was inserted
+     * @return self last insert id or $this if nothing was inserted
      */
     public function execute(): self
     {
