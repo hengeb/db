@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Hengeb\Db;
 
-use DateTimeZone;
 use Hengeb\Db\DbStatement;
 
 /**
@@ -14,7 +13,7 @@ class Db
     private $dbh = null;
     private static ?Db $instance = null;
 
-    public DateTimeZone $timezoneUtc;
+    public \DateTimeZone $timezoneUtc;
 
     /**
      * @param array $configuration e.g. ["host" => "example.org", "port" => 3306, "database" => "my_database", "user" => "john.doe", "password" => "secret"]
@@ -27,7 +26,7 @@ class Db
         $this->dbh->query('SET NAMES "utf8mb4" COLLATE "utf8mb4_unicode_ci"');
         $this->dbh->query('SET time_zone = "+00:00"');
 
-        $this->timezoneUtc = new DateTimeZone('UTC');
+        $this->timezoneUtc = new \DateTimeZone('UTC');
     }
 
     public static function getInstance(): self
@@ -103,7 +102,7 @@ class Db
         } elseif (is_array($value)) {
             $value = json_encode($value);
             $type = \PDO::PARAM_STR;
-        } elseif ($value instanceof DateTimeInterface) {
+        } elseif ($value instanceof \DateTime || $value instanceof \DateTimeImmutable) {
             if ($value->getTimeZone()->getName() !== 'UTC') {
                 $value = $value->setTimeZone($this->timezoneUtc);
             }
