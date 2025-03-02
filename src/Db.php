@@ -89,6 +89,10 @@ class Db
     }
 
     public function getInsertableValueAndType(mixed $value): array {
+        if ($value instanceof \BackedEnum) {
+            $value = $value->value;
+        }
+
         $type = \PDO::PARAM_STR;
         if (is_bool($value)) {
             $type = \PDO::PARAM_BOOL;
